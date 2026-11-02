@@ -5,15 +5,15 @@ import RadioGroup from '../common/RadioGroup.jsx'
 
 import rideRequestSchema from '../../utils/schemas/rideRequest';
 
-const RequestForm = () => {
+const RequestForm = (props) => {
   const [form, setForm] = useState({
     name: '',
     location: '',
     destination: '',
     passengers: 0,
     date: new Date(),
-    lugge:'',
-    gender:''
+    lugge: '',
+    gender: ''
   });
   const [showTimePicker, setShowTimePicker] = useState(false);
 
@@ -25,12 +25,12 @@ const RequestForm = () => {
 
   const submit = () => {
     setErrors([]);
-    rideRequestSchema.validate(form, { abortEarly: false }).then(value => {
-      console.log(value);
+    rideRequestSchema.validate(form, { abortEarly: false }).then(data => {
+      console.log(data);
+      props.onSubmit(data);
+    }).catch(error => {
+      setErrors(error.errors)
     })
-      .catch(error => {
-        setErrors(error.errors)
-      })
   };
 
   return (
@@ -78,10 +78,10 @@ const RequestForm = () => {
         keyboardType="numeric"
         onChangeText={(v) => handleFormChange('passengers', parseInt(v))}
       />
-      
-      <TouchableOpacity 
-        style={{ width: 100, height: 24, backgroundColor: "#A80000" }} 
-        onPress={()=>{
+
+      <TouchableOpacity
+        style={{ width: 100, height: 24, backgroundColor: "#A80000" }}
+        onPress={() => {
           setShowTimePicker(true)
         }}
       >
@@ -89,8 +89,8 @@ const RequestForm = () => {
           Pick a date/time
         </Text>
       </TouchableOpacity>
-      
-      {showTimePicker && (      
+
+      {showTimePicker && (
         <RNDateTimePicker
           value={new Date()}
           mode="date"
@@ -103,12 +103,12 @@ const RequestForm = () => {
           }}
         />
       )}
-      <RadioGroup 
-        options={['Has luggage','No luggage']}
+      <RadioGroup
+        options={['Has luggage', 'No luggage']}
         onOptionSelected={(v) => handleFormChange('lugge', v)}
       />
-      <RadioGroup 
-        options={['Male','Female']}
+      <RadioGroup
+        options={['Male', 'Female']}
         onOptionSelected={(v) => handleFormChange('gender', v)}
       />
       <Button
