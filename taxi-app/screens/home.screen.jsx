@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import RequestScreen from './request.screen.jsx';
 import DrivingScreen from './driving.screen.jsx';
-import AboutScreen from './about.screen.jsx';
+import RequestsListScreen from './requests-list.screen.jsx';
 
 const Tab = createBottomTabNavigator();
 
@@ -38,8 +38,8 @@ const HomeScreen = () => {
       />
       <Tab.Screen
         name="about"
-        component={AboutScreen}
-        options={{ title: 'About App', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="information-box-outline" size={size} color={color} /> }}
+        component={RequestsListScreen}
+        options={{ title: 'Requests List', tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="format-list-bulleted" size={size} color={color} /> }}
       />
     </Tab.Navigator>
   )

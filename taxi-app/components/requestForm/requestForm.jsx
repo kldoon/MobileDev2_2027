@@ -5,16 +5,18 @@ import RadioGroup from '../common/RadioGroup.jsx'
 
 import rideRequestSchema from '../../utils/schemas/rideRequest';
 
+const INIT_FORM = {
+  name: '',
+  location: '',
+  destination: '',
+  passengers: 0,
+  date: new Date(),
+  lugge: '',
+  gender: ''
+};
+
 const RequestForm = (props) => {
-  const [form, setForm] = useState({
-    name: '',
-    location: '',
-    destination: '',
-    passengers: 0,
-    date: new Date(),
-    lugge: '',
-    gender: ''
-  });
+  const [form, setForm] = useState(INIT_FORM);
   const [showTimePicker, setShowTimePicker] = useState(false);
 
   const [errors, setErrors] = useState([]);
@@ -26,8 +28,8 @@ const RequestForm = (props) => {
   const submit = () => {
     setErrors([]);
     rideRequestSchema.validate(form, { abortEarly: false }).then(data => {
-      console.log(data);
       props.onSubmit(data);
+      setForm(INIT_FORM);
     }).catch(error => {
       setErrors(error.errors)
     })
@@ -54,18 +56,21 @@ const RequestForm = (props) => {
         style={styles.input}
         placeholder="Your Name"
         keyboardType="default"
+        value={form.name}
         onChangeText={(v) => handleFormChange('name', v)}
       />
       <TextInput
         style={styles.input}
         placeholder="Your Location"
         keyboardType="default"
+        value={form.location}
         onChangeText={(v) => handleFormChange('location', v)}
       />
       <TextInput
         style={styles.input}
         placeholder="Your Destination"
         keyboardType="default"
+        value={form.destination}
         onChangeText={(v) => handleFormChange('destination', v)}
       />
       <TextInput
@@ -76,6 +81,7 @@ const RequestForm = (props) => {
         accessibilityState={{ disabled: !form.destination.length }}
         placeholder="Number of Passengers"
         keyboardType="numeric"
+        value={form.passengers.toString()}
         onChangeText={(v) => handleFormChange('passengers', parseInt(v))}
       />
 
@@ -92,7 +98,7 @@ const RequestForm = (props) => {
 
       {showTimePicker && (
         <RNDateTimePicker
-          value={new Date()}
+          value={new Date(form.date)}
           mode="date"
           display="default"
           minimumDate={new Date()}
