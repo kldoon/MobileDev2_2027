@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+﻿import { View, Text, StyleSheet, ScrollView, Pressable, Alert, TextInput, RefreshControl } from 'react-native';
 import { useEffect, useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { query, getDocs, collection, doc, deleteDoc } from "firebase/firestore";
+import { query, where, or, and, getDocs, collection, doc, deleteDoc } from "firebase/firestore";
 
 // import { getAllRequests, deleteRequest as removeRequest } from '../utils/db'; // SQLite
 import { fireStoreDB } from '../utils/firebase.js';
@@ -9,10 +9,31 @@ import { fireStoreDB } from '../utils/firebase.js';
 const RequestsListScreen = () => {
   const [requestsList, setRequestsList] = useState([]);
 
+  const [searchText, setSearchText] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
   const readRequests = () => {
     //Firebase code
-    const q = query(collection(fireStoreDB, 'requests'))
-    getDocs(q).then(snapshot => {
+    const term = searchText.trim();
+    const end = term + '\uf8ff'; // "starts with" trick: from term up to term + highest character
+
+    let q;
+    if (term === '') {
+      // no search text: get everything
+      q = query(collection(fireStoreDB, 'requests'));
+    } else {
+      // match if name OR destination OR location starts with the search text
+      q = query(
+        collection(fireStoreDB, 'requests'),
+        or(
+          and(where('name', '>=', term), where('name', '<=', end)),
+          and(where('destination', '>=', term), where('destination', '<=', end)),
+          and(where('location', '>=', term), where('location', '<=', end))
+        )
+      );
+    }
+
+    return getDocs(q).then(snapshot => {
       // replace the list (not append) so reloading never duplicates items
       setRequestsList(snapshot.docs.map(d => ({ ...d.data(), id: d.id })));
     })
@@ -44,6 +65,13 @@ const RequestsListScreen = () => {
     readRequests();
   }, []);
 
+  const handleRefresh = () => {
+    setRefreshing(true);
+    readRequests()
+      .catch(() => Alert.alert("Error", "Failed to refresh the list"))
+      .finally(() => setRefreshing(false));
+  }
+
   const handleDelete = (id) => {
     Alert.alert("Confirm", "Are you sure you want to delete request: " + id, [
       {
@@ -61,7 +89,27 @@ const RequestsListScreen = () => {
     <View style={styles.container}>
       <Text style={styles.title}>Requests List</Text>
 
-      <ScrollView contentContainerStyle={styles.list}>
+      <View style={styles.searchBox}>
+        <MaterialCommunityIcons name="magnify" size={22} color="#636e72" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search name, destination, location..."
+          value={searchText}
+          onChangeText={setSearchText}
+          onSubmitEditing={() => readRequests()}
+          returnKeyType="search"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <Pressable style={styles.searchButton} onPress={() => readRequests()}>
+          <Text style={styles.searchButtonText}>Search</Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        contentContainerStyle={styles.list}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+      >
         {requestsList.map((r) => (
           <View key={r.id} style={styles.card}>
             <Text style={styles.name}>{r.id} | {r.name}</Text>
@@ -115,6 +163,32 @@ const styles = StyleSheet.create({
     color: '#2d3436',
     textAlign: 'center',
     marginBottom: 16,
+  },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#dfe6e9',
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    color: '#2d3436',
+  },
+  searchButton: {
+    backgroundColor: '#0984e3',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  searchButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
   },
   list: {
     paddingBottom: 24,
