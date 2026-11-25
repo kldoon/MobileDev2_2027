@@ -4,7 +4,9 @@ import RNDateTimePicker from '@react-native-community/datetimepicker';
 import RadioGroup from '../common/RadioGroup.jsx'
 
 import rideRequestSchema from '../../utils/schemas/rideRequest';
-import { getRequestById } from '../../utils/db';
+import { doc, getDoc } from "firebase/firestore";
+import { fireStoreDB } from '../../utils/firebase.js';
+// import { getRequestById } from '../../utils/db'; // SQLite
 
 const INIT_FORM = {
   id: null,
@@ -27,10 +29,11 @@ const RequestForm = (props) => {
     setForm({ ...form, [field]: v });
   };
 
-  // keep id as a number, or null when the field is empty
+  // Firestore ids are strings, null when the field is empty
   const handleIdChange = (v) => {
-    const digits = v.replace(/[^0-9]/g, '');
-    handleFormChange('id', digits === '' ? null : parseInt(digits));
+    // const digits = v.replace(/[^0-9]/g, '');
+    // handleFormChange('id', digits === '' ? null : parseInt(digits));
+    handleFormChange('id', v.trim() === '' ? null : v.trim());
   };
 
   const submit = () => {
@@ -50,6 +53,25 @@ const RequestForm = (props) => {
       return;
     }
 
+    // Firestore Code
+    getDoc(doc(fireStoreDB, 'requests', form.id))
+      .then(snapshot => {
+        if (!snapshot.exists()) {
+          Alert.alert("Item Not found!");
+        } else {
+          const data = snapshot.data();
+          setForm({
+            ...data,
+            id: snapshot.id,
+            // Firestore returns a Timestamp, the form needs a JS Date
+            date: data.date.toDate(),
+          });
+        }
+      })
+      .catch(() => Alert.alert("Failed to load the request"));
+
+    /*
+    ///////// SQLite Code
     const data = getRequestById(form.id);
 
     if (!data) {
@@ -67,6 +89,7 @@ const RequestForm = (props) => {
         gender: data.gender
       });
     }
+    */
   }
 
   return (

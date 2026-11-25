@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { useEffect, useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { query, getDocs, collection } from "firebase/firestore";
+import { query, getDocs, collection, doc, deleteDoc } from "firebase/firestore";
 
-import { getAllRequests, deleteRequest as removeRequest } from '../utils/db';
+// import { getAllRequests, deleteRequest as removeRequest } from '../utils/db'; // SQLite
 import { fireStoreDB } from '../utils/firebase.js';
 
 const RequestsListScreen = () => {
@@ -13,11 +13,8 @@ const RequestsListScreen = () => {
     //Firebase code
     const q = query(collection(fireStoreDB, 'requests'))
     getDocs(q).then(snapshot => {
-      if (snapshot.docs.length > 0) {
-        snapshot.docs.map(doc => {
-          setRequestsList(prev => ([...prev, { ...doc.data(), id: doc.id }]));
-        })
-      }
+      // replace the list (not append) so reloading never duplicates items
+      setRequestsList(snapshot.docs.map(d => ({ ...d.data(), id: d.id })));
     })
 
     // SQLite Code
@@ -25,11 +22,22 @@ const RequestsListScreen = () => {
   }
 
   const deleteRequest = (id) => {
+    // Firestore Code
+    deleteDoc(doc(fireStoreDB, 'requests', id))
+      .then(() => {
+        readRequests();
+        Alert.alert("Delete Success");
+      })
+      .catch(() => Alert.alert("Error", "Failed to delete the request"));
+
+    /*
+    ///////// SQLite Code
     const res = removeRequest(id);
     if (res.changes > 0) {
       readRequests();
       Alert.alert("Delete Success");
     }
+    */
   }
 
   useEffect(() => {
@@ -60,18 +68,18 @@ const RequestsListScreen = () => {
 
             <View style={styles.row}>
               <Text style={styles.label}>Location:</Text>
-              <Text style={styles.value}>{r.loc}</Text>
+              <Text style={styles.value}>{r.location}</Text>
             </View>
 
             <View style={styles.row}>
               <Text style={styles.label}>Destination:</Text>
-              <Text style={styles.value}>{r.dest}</Text>
+              <Text style={styles.value}>{r.destination}</Text>
             </View>
 
             <View style={styles.row}>
               <Text style={styles.label}>Date:</Text>
               <Text style={styles.value}>
-                {new Date(r.date * 1000).toLocaleString()}
+                {r.date.toDate().toLocaleString()}
               </Text>
             </View>
 
@@ -82,7 +90,7 @@ const RequestsListScreen = () => {
 
             <View style={styles.row}>
               <Text style={styles.label}>Luggage:</Text>
-              <Text style={styles.value}>{r.luggage ? 'Yes' : 'No'}</Text>
+              <Text style={styles.value}>{r.lugge}</Text>
             </View>
             <Pressable onPress={() => handleDelete(r.id)}>
               <MaterialCommunityIcons name="trash-can-outline" size={30} color='#ff2525' />

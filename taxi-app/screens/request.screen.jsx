@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import RequestForm from '../components/requestForm/requestForm.jsx';
 import { Alert } from 'react-native';
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
 
 import { insertRequest, updateRequest } from '../utils/db';
 import { fireStoreDB } from '../utils/firebase.js';
@@ -16,16 +16,23 @@ const RequestScreen = () => {
     const isNew = data.id == null;
 
     // Firestore Code
-    // Add a new document with a generated id.
-    addDoc(collection(fireStoreDB, "requests"), data)
-      .then((docRef) => {
-        //console.log("Document written with ID: ", docRef.id);
-        Alert.alert('Success', `Your request has been added successfully`, [
+    // The id is the document id, it is not stored inside the document.
+    const { id, ...fields } = data;
+    const action = isNew ? 'added' : 'updated';
+
+    // Add a new document with a generated id, or update the existing one.
+    const request = isNew
+      ? addDoc(collection(fireStoreDB, "requests"), fields)
+      : updateDoc(doc(fireStoreDB, "requests", id), fields);
+
+    request
+      .then(() => {
+        Alert.alert('Success', `Your request has been ${action} successfully`, [
           { text: 'OK' },
         ]);
       })
-      .error(error => {
-        Alert.alert('Error', `Failed to add your request`, [
+      .catch(error => {
+        Alert.alert('Error', `Failed to ${action} your request`, [
           { text: 'OK' },
         ]);
       });
