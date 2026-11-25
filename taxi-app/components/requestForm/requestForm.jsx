@@ -14,7 +14,7 @@ const INIT_FORM = {
   passengers: 0,
   date: new Date(),
   lugge: '',
-  gender: ''
+  gender: 'Male'
 };
 
 const RequestForm = (props) => {

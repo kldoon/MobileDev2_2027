@@ -1,13 +1,27 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { useEffect, useState } from 'react';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { query, getDocs, collection } from "firebase/firestore";
+
 import { getAllRequests, deleteRequest as removeRequest } from '../utils/db';
+import { fireStoreDB } from '../utils/firebase.js';
 
 const RequestsListScreen = () => {
   const [requestsList, setRequestsList] = useState([]);
 
   const readRequests = () => {
-    setRequestsList(getAllRequests());
+    //Firebase code
+    const q = query(collection(fireStoreDB, 'requests'))
+    getDocs(q).then(snapshot => {
+      if (snapshot.docs.length > 0) {
+        snapshot.docs.map(doc => {
+          setRequestsList(prev => ([...prev, { ...doc.data(), id: doc.id }]));
+        })
+      }
+    })
+
+    // SQLite Code
+    // setRequestsList(getAllRequests());
   }
 
   const deleteRequest = (id) => {
